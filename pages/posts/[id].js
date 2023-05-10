@@ -1,9 +1,6 @@
 import { getGlobalData } from '../../utils/global-data';
 import {
-  getNextPostBySlug,
   getPostBySlug,
-  getPreviousPostBySlug,
-  postFilePaths,
 } from '../../utils/mdx-utils';
 
 import { MDXRemote } from 'next-mdx-remote';
@@ -16,21 +13,91 @@ import Header from '../../components/Header';
 import Layout, { GradientBackground } from '../../components/Layout';
 import SEO from '../../components/SEO';
 
-// Custom components/renderers to pass to MDX.
-// Since the MDX files aren't loaded by webpack, they have no knowledge of how
-// to handle import statements. Instead, you must include components in scope
-// here.
 const components = {
   a: CustomLink,
-  // It also works with dynamically-imported components, which is especially
-  // useful for conditionally loading components for certain routes.
-  // See the notes in README.md for more details.
   Head,
 };
 
 export default function PostPage({
+  posts,
+  globalData,
+}) {
+  return (
+    <Layout>
+      <SEO
+        title={`${posts.title} - ${globalData.name}`}
+        description={posts.description}
+      />
+      <Header name={globalData.name} />
+      <article className="px-6 md:px-0">
+        <header>
+          <h1 className="text-3xl md:text-5xl dark:text-white text-center mb-12">
+            {posts?.title}
+          </h1>
+          {posts?.description && (
+            <p className="text-xl mb-4">{posts?.description}</p>
+          )}
+        </header>
+        <main>
+          <article className="prose dark:prose-dark">
+            {posts.body}
+          </article>
+        </main>
+      </article>
+      <Footer copyrightText={globalData.footerText} />
+      <GradientBackground
+        variant="large"
+        className="absolute -top-32 opacity-30 dark:opacity-50"
+      />
+      <GradientBackground
+        variant="small"
+        className="absolute bottom-0 opacity-20 dark:opacity-10"
+      />
+    </Layout>
+  );
+}
+
+export const getServerSideProps = async ({ params }) => {
+  const globalData = getGlobalData();
+  const posts = await getPostBySlug(params.id);
+ 
+
+  return {
+    props: {
+      globalData,
+      posts,
+    },
+  };
+};
+
+
+/*import { getGlobalData } from '../../utils/global-data';
+import {
+  getNextPostBySlug,
+  getPostBySlug,
+  getPreviousPostBySlug,
+  getAllPostIds
+} from '../../utils/mdx-utils';
+
+import { MDXRemote } from 'next-mdx-remote';
+import Head from 'next/head';
+import Link from 'next/link';
+import ArrowIcon from '../../components/ArrowIcon';
+import CustomLink from '../../components/CustomLink';
+import Footer from '../../components/Footer';
+import Header from '../../components/Header';
+import Layout, { GradientBackground } from '../../components/Layout';
+import SEO from '../../components/SEO';
+
+
+const components = {
+  a: CustomLink,
+  Head,
+};
+
+export default function PostPage({
+  posts,
   source,
-  frontMatter,
   prevPost,
   nextPost,
   globalData,
@@ -38,17 +105,17 @@ export default function PostPage({
   return (
     <Layout>
       <SEO
-        title={`${frontMatter.title} - ${globalData.name}`}
-        description={frontMatter.description}
+        title={`${posts.title} - ${posts.name}`}
+        description={posts.description}
       />
       <Header name={globalData.name} />
       <article className="px-6 md:px-0">
         <header>
           <h1 className="text-3xl md:text-5xl dark:text-white text-center mb-12">
-            {frontMatter.title}
+            {posts?.title}
           </h1>
-          {frontMatter.description && (
-            <p className="text-xl mb-4">{frontMatter.description}</p>
+          {posts?.description && (
+            <p className="text-xl mb-4">{posts?.description}</p>
           )}
         </header>
         <main>
@@ -101,29 +168,29 @@ export default function PostPage({
 export const getStaticProps = async ({ params }) => {
   const globalData = getGlobalData();
   const { mdxSource, data } = await getPostBySlug(params.slug);
-  const prevPost = getPreviousPostBySlug(params.slug);
-  const nextPost = getNextPostBySlug(params.slug);
+  const prevPost = await getPreviousPostBySlug(params.slug);
+  const nextPost = await getNextPostBySlug(params.slug);
+  const posts = data;
 
   return {
     props: {
       globalData,
       source: mdxSource,
-      frontMatter: data,
+      posts,
       prevPost,
       nextPost,
     },
   };
 };
 
-export const getStaticPaths = async () => {
-  const paths = postFilePaths
-    // Remove file extensions for page paths
-    .map((path) => path.replace(/\.mdx?$/, ''))
-    // Map the path into the static paths object required by Next.js
-    .map((slug) => ({ params: { slug } }));
+export async function getStaticPaths() {
+  // Obtenha a lista de IDs de post do seu sistema de gerenciamento de conteúdo
+  const ids = await getAllPostIds();
 
-  return {
-    paths,
-    fallback: false,
-  };
-};
+  // Crie uma matriz de objetos com o formato { params: { slug: 'valor-do-id' } }
+  const paths = ids.map((id) => ({ params: { slug: id } }));
+
+  // Retorne os caminhos e fallback: false para indicar que todas as páginas devem ser geradas durante a construção
+  return { paths, fallback: false };
+}
+*/
